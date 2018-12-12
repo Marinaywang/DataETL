@@ -67,3 +67,13 @@ python create_table.py mwang.Repos18002_p2 /eval/data/spectrum_deepdive/copied_d
 create external table mwang.apple_pay_2018_12_04 (record string)
 row format delimited fields terminated by '\001' stored as textfile 
 location '/data/data_eval/apple_pay/2018_12_04';
+
+## Explore this dataset
+
+select b.placeid, s.name, s.transactionCount, s.merchantCategory, s.score from mwang.apple_pay_2018_12_04 a
+LATERAL VIEW json_tuple(a.record, 'exportId', 'placeid', 'addedNames', 'removedNames', 'removeApplePay')
+                              b as exportId, placeid, addedNames, removedNames, removeApplePay
+   LATERAL VIEW explode(split(regexp_replace(regexp_replace(b.addedNames,'\\}\\,\\{','\\}mwang\\{'),'\\[|\\]',''), 'mwang')) d as details 
+   LATERAL VIEW json_tuple(d.details, 'name', 'merchantCategory','transactionCount','score') s as name,merchantCategory, transactionCount, score
+Limit 20; 
+ 
